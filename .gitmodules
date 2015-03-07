@@ -1,0 +1,4 @@
+[submodule "src/NewRelicSDK"]
+	path = src/NewRelicSDK
+	url = https://github.com/newrelic-platform/newrelic_dotnet_sdk
+	branch = master
