@@ -10,10 +10,13 @@ namespace RedisWindowsNewRelicPlugin
 {
     class RedisAgent : Agent
     {
-        static ConnectionMultiplexer Redis;
+        ConnectionMultiplexer Redis;
+        string name;
+        string configuration;
 
-        public RedisAgent(string configuration)
+        public RedisAgent(string name, string configuration)
         {
+            this.name = name;
             Redis = ConnectionMultiplexer.Connect(configuration);
         }
 
@@ -22,14 +25,14 @@ namespace RedisWindowsNewRelicPlugin
             get { return "io.jennings.newrelic.rediswindows"; }
         }
 
-        public override string GetAgentName()
-        {
-            return "Redis for Windows Plugin";
-        }
-
         public override string Version
         {
             get { return "0.1.0"; }
+        }
+
+        public override string GetAgentName()
+        {
+            return this.name;
         }
 
         public override void PollCycle()

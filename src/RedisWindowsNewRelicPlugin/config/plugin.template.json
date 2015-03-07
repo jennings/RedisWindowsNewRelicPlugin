@@ -1,0 +1,8 @@
+﻿{
+    agents: [
+        {
+            "name": "Main Redis Instance",
+            configuration: "server=redis01"
+        }
+    ]
+}
