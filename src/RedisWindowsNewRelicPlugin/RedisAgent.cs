@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NewRelic.Platform.Sdk;
+using NewRelic.Platform.Sdk.Processors;
 using StackExchange.Redis;
 
 namespace RedisWindowsNewRelicPlugin
@@ -12,12 +13,15 @@ namespace RedisWindowsNewRelicPlugin
     {
         ConnectionMultiplexer Redis;
         string name;
-        string configuration;
+        EpochProcessor keysEvictedProcessor;
+        EpochProcessor commandsProcessedProcessor;
 
         public RedisAgent(string name, string configuration)
         {
             this.name = name;
             Redis = ConnectionMultiplexer.Connect(configuration);
+            keysEvictedProcessor = new EpochProcessor();
+            commandsProcessedProcessor = new EpochProcessor();
         }
 
         public override string Guid
@@ -49,11 +53,11 @@ namespace RedisWindowsNewRelicPlugin
             ReportMetric(info, "memory", "used_memory", "Memory/Used", "Bytes");
             ReportMetric(info, "memory", "mem_fragmentation_ratio", "Memory/FragmentationRatio", "");
 
-            ReportMetric(info, "stats", "keys_evicted", "Stats/KeysEvicted", "");
-            ReportMetric(info, "stats", "total_commands_processed", "Stats/TotalCommandsProcessed", "");
+            ReportMetric(info, "stats", "keys_evicted", "Stats/KeysEvicted", "Keys/sec", keysEvictedProcessor);
+            ReportMetric(info, "stats", "total_commands_processed", "Stats/TotalCommandsProcessed", "Cmds/sec", commandsProcessedProcessor);
         }
 
-        void ReportMetric(Dictionary<string, Dictionary<string, string>> info, string section, string name, string metricName, string unit)
+        void ReportMetric(Dictionary<string, Dictionary<string, string>> info, string section, string name, string metricName, string unit, IProcessor processor = null)
         {
             Dictionary<string, string> sectionDict;
             string value;
@@ -63,7 +67,10 @@ namespace RedisWindowsNewRelicPlugin
                 if (sectionDict.TryGetValue(name, out value))
                 {
                     var f = Convert.ToSingle(value);
-                    ReportMetric(metricName, unit, f);
+                    if (processor != null)
+                        ReportMetric(metricName, unit, processor.Process(f));
+                    else
+                        ReportMetric(metricName, unit, f);
                 }
             }
         }
